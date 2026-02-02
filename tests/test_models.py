@@ -34,7 +34,8 @@ from tests.factories import ProductFactory
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
-
+class DataValidationError(Exception):
+     """Used for an data validation errors when deserializing"""
 ######################################################################
 #  P R O D U C T   M O D E L   T E S T   C A S E S
 ######################################################################
@@ -114,6 +115,18 @@ class TestProductModel(unittest.TestCase):
         self.assertEqual(found_product.name, product.name)
         self.assertEqual(found_product.description, product.description)
         self.assertEqual(found_product.price, product.price)
+
+    def test_update_a_empty_product(self):
+        product = ProductFactory()
+        product.id = None
+        product.create()
+        self.assertIsNotNone(product.id)
+        product.description = "testing"
+        product.id = None
+        with self.assertRaises(DataValidationError) as ctx:
+            product.update()
+        expected_msg = 'Update called with empty ID field'
+        self.assertEquals(ctx.exception.message, expected_msg)
 
     def test_update_a_product(self):
         product = ProductFactory()
